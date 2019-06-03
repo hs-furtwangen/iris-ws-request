@@ -1,25 +1,24 @@
 const button = document.getElementById('button');
 
-const network = 'G';
-const year = 2014;
+const network = 'G'; // network abrevation
+const year = 2014; // the year we are observing
+
+const minCoverage = 0.5; // ratio of the year a station has to covers to be considered
+const maxSegments = 8; // maximum number of segments a station can to deliver to be considerd
+
+const refAudioRate = 48000; // audio rate
+const refFrameRate = 20; // reference (common) sensor data rate
+
+const refRatio = refAudioRate / refFrameRate;
 const starttime = `${year}-01-01T00:00:00`;
 const endtime = `${year + 1}-01-01T00:00:00`;
+const availabilityUrl = makeAvailabilityUrl(network, starttime, endtime);
+const durationOfYear = daysOfMonth(year, 13) * 24 * 60 * 60;
+const maxDurationOfMonth = 31 * 24 * 60 * 60;
 
-const refAudioRate = 48000;
-const refFramerate = 20;
-const refRatio = refAudioRate / refFramerate;
-
-function getTimeObject(year, month, day, hour, minute, second) {
-  return {
-    year,
-    month,
-    day,
-    hour,
-    minute,
-    second,
-  };
-}
-
+/**
+ * helper functions
+ */
 function parseTime(str) {
   const parts = str.split('-');
 
@@ -62,6 +61,17 @@ function getTimeString(time) {
   const ss = numToStr2(time.second);
 
   return `${yyyy}-${mm}-${dd}T${hh}:${nn}:${ss}`;
+}
+
+function getTimeObject(year, month, day, hour, minute, second) {
+  return {
+    year,
+    month,
+    day,
+    hour,
+    minute,
+    second,
+  };
 }
 
 function daysOfMonth(year, month) {
@@ -144,11 +154,9 @@ function addSpan(network, station, starttime, endtime, audiorate) {
   return label;
 }
 
-const availabilityUrl = makeAvailabilityUrl(network, starttime, endtime);
-
-const durationOfYear = daysOfMonth(year, 13) * 24 * 60 * 60;
-const maxDurationOfMonth = 31 * 24 * 60 * 60;
-
+/**
+ * main program
+ */
 button.addEventListener('click', () => {
   console.log("sending request:", availabilityUrl);
 
@@ -169,8 +177,8 @@ button.addEventListener('click', () => {
         const timespans = s.timespans;
         const id = network + '-' + station;
 
-        if (timespans.length < 8) {
-          const audiorate = refAudioRate * framerate / refFramerate;
+        if (timespans.length <= maxSegments) {
+          const audiorate = refAudioRate * framerate / refFrameRate;
           let totalDuration = 0;
 
           for (let span of timespans) {
@@ -186,7 +194,7 @@ button.addEventListener('click', () => {
 
           const coverage = totalDuration / durationOfYear;
 
-          if (coverage > 0.5) {
+          if (coverage >= minCoverage) {
             console.log('------------------------------------------------------------------------------');
             console.log(network, station, framerate, timespans.length, coverage);
 
