@@ -1,16 +1,1 @@
 body {  }
-
-.container {
-  margin: 50px;
-}
-
-video, audio, button {
-  display:block;
-  margin: 10px;
-}
-
-audio {
-  width: 638px;
-  border: 1px solid black;
-  border-radius: 30px;
-}
