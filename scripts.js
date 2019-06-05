@@ -38,7 +38,7 @@ function requestStationList() {
   numSelected = 0;
 
   const availabilityUrl = makeAvailabilityUrl(network, '*', starttime, endtime);
-  requestField.innerHTML = `${availabilityUrl}`;
+  requestField.innerHTML = `Request URL: ${availabilityUrl}`;
 
   const availabilityRequest = new XMLHttpRequest();
   availabilityRequest.responseType = 'json';
