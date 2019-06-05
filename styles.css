@@ -1,1 +1,62 @@
-body {  }
+body {  
+  font-family: sans-serif;
+}
+
+table {  
+  font-family: sans-serif;
+  border-style: none;
+  border-width: 1px;
+  border-spacing: 0px;
+}
+
+th {
+  border-style: solid;
+  border-width: 1px;  
+  padding: 4px;
+  text-align: left;
+  vertical-align: top;
+}
+
+td {
+  border-style: solid;
+  border-width: 1px;  
+  padding: 4px;
+  text-align: left;
+  vertical-align: top;
+}
+
+#station-button {
+  font-size: 12pt;
+}
+
+#selected-stations-container {
+  position: relative;
+  width: 90%;
+  height: 400px;
+  border-style: solid;
+  border-width: 1px;
+  border-color: #ddd;
+}
+
+#equator {
+  position: absolute;
+  top: 200px;
+  width: 100%;
+  opacity: 0.3;
+}
+
+.box {
+  position: absolute;
+  width: 75px;
+  height: 20px;
+  border-left-style: solid;
+  border-left-width: 1px;
+  border-bottom-style: solid;
+  border-bottom-width: 1px;
+  padding: 8px;
+}
+
+.distance {
+  position: absolute;
+  padding: 4px;
+}
