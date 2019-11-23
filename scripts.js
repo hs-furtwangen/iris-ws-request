@@ -1,17 +1,31 @@
-const network = '*'; // network abrevation (mayby '*')
-const year = 2014; // the year we are observing
+/******************************************
+ *
+ * parameters
+ *
+ */
+const periodStart = '2004-12-01T00:00:00';
+const periodEnd = '2004-12-29T00:00:00';
 
 const minCoverage = 0.9; // ratio of the year a station has to covers to be considered
-const maxSegments = 8; // maximum number of segments a station's data can have to be considerd
-const maxLattitude = 90; // maximum lattitude of a station to be considerd
+const maxSegments = 1; // maximum number of segments a station's data can have to be considerd
+const maxLattitude = 45; // maximum lattitude of a station to be considerd
 
 const refAudioRate = 48000; // audio rate
 const refFrameRate = 20; // reference (common) sensor data rate
 
+/******************************************/
+
+const network = '*'; // network abrevation (mayby '*')
+const refYear = 2000;
+
 const refRatio = refAudioRate / refFrameRate;
-const starttime = `${year}-01-01T00:00:00`;
-const endtime = `${year + 1}-01-01T00:00:00`;
-const durationOfYear = daysOfMonth(year, 13) * 24 * 60 * 60;
+
+const periodStartTime = parseTime(periodStart);
+const periodEndTime = parseTime(periodEnd);
+const periodStartSeconds = getSeconds(refYear, periodStartTime);
+const periodEndSeconds = getSeconds(refYear, periodEndTime);
+const durationOfPeriod = periodEndSeconds - periodStartSeconds;
+
 const maxDurationOfMonth = 31 * 24 * 60 * 60;
 
 let stationArray = null;
@@ -19,7 +33,6 @@ let stationMap = null;
 
 const stationButton = document.getElementById('station-button');
 const requestField = document.getElementById('request-field');
-//const audioButton = document.getElementById('audio-button');
 const selectedStationsContainer = document.getElementById('selected-stations-container');
 const stationTable = document.getElementById('station-table');
 const linkTable = document.getElementById('link-table');
@@ -37,7 +50,7 @@ function requestStationList() {
   stationMap = new Map();
   numSelected = 0;
 
-  const availabilityUrl = makeAvailabilityUrl(network, '*', starttime, endtime);
+  const availabilityUrl = makeAvailabilityUrl(network, '*', periodStart, periodEnd);
   requestField.innerHTML = `Request URL: ${availabilityUrl}`;
 
   const availabilityRequest = new XMLHttpRequest();
@@ -68,16 +81,16 @@ function generateStationList(response) {
       let totalDuration = 0;
 
       for (let span of timespans) {
-        const starttime = parseTime(span[0]);
-        const endtime = parseTime(span[1]);
-        const startSeconds = getSeconds(year, starttime);
-        let endSeconds = getSeconds(year, endtime);
+        const startTime = parseTime(span[0]);
+        const endTime = parseTime(span[1]);
+        const startSeconds = getSeconds(refYear, startTime);
+        let endSeconds = getSeconds(refYear, endTime);
         const duration = endSeconds - startSeconds;
 
         totalDuration += duration;
       }
 
-      const coverage = totalDuration / durationOfYear;
+      const coverage = totalDuration / durationOfPeriod;
 
       if (coverage >= minCoverage) {
         const catalogRequest = new XMLHttpRequest();
@@ -94,7 +107,7 @@ function generateStationList(response) {
             const lattitude = parseFloat(parts[4]);
             const longitude = parseFloat(parts[5]);
 
-            if (lattitude <= maxLattitude && -lattitude >= -maxLattitude) {
+            if (Math.abs(lattitude) <= maxLattitude) {
               const obj = {
                 id,
                 network,
@@ -228,11 +241,6 @@ function onCheck(e) {
   generateAudioList();
 }
 
-/**
- * request audio links
- */
-//audioButton.addEventListener('click', generateAudioList);
-
 function generateAudioList() {
   linkTable.innerHTML = `
     <thead><tr>
@@ -267,32 +275,32 @@ function generateAudioList() {
       };
 
       for (let span of timespans) {
-        const starttime = parseTime(span[0]);
-        const endtime = parseTime(span[1]);
-        const startSeconds = getSeconds(year, starttime);
-        let endSeconds = getSeconds(year, endtime);
+        const startTime = parseTime(span[0]);
+        const endTime = parseTime(span[1]);
+        const startSeconds = getSeconds(refYear, startTime);
+        const endSeconds = getSeconds(refYear, endTime);
 
         const duration = endSeconds - startSeconds;
 
         if (duration < maxDurationOfMonth) {
-          addSegment(network, station, starttime, endtime, audiorate, info);
+          addSegment(network, station, startTime, endTime, audiorate, info);
         } else {
-          let month = starttime.month;
-          let endMonth = endtime.month + 12 * (endtime.year - starttime.year);
+          let month = startTime.month;
+          let endMonth = endTime.month + 12 * (endTime.year - startTime.year);
 
-          const start = getTimeObject(starttime.year, month, starttime.day, starttime.hour, starttime.minute, starttime.second);
-          const end = getTimeObject(starttime.year, ++month, 1, 0, 0, 0);
+          const start = getTimeObject(startTime.year, month, startTime.day, startTime.hour, startTime.minute, startTime.second);
+          const end = getTimeObject(startTime.year, ++month, 1, 0, 0, 0);
           addSegment(network, station, start, end, audiorate, info);
 
           while (month < endMonth) {
-            const start = getTimeObject(starttime.year, month, 1, 0, 0, 0);
-            const end = getTimeObject(starttime.year, ++month, 1, 0, 0, 0);
+            const start = getTimeObject(startTime.year, month, 1, 0, 0, 0);
+            const end = getTimeObject(startTime.year, ++month, 1, 0, 0, 0);
             addSegment(network, station, start, end, audiorate, info);
           }
 
           if (end.day > 1 || end.hour > 0 || end.minute > 0 || end.second > 0) {
-            const start = getTimeObject(starttime.year, month, 1, 0, 0, 0);
-            const end = getTimeObject(endtime.year, endtime.month, endtime.day, endtime.hour, endtime.minute, endtime.second);
+            const start = getTimeObject(startTime.year, month, 1, 0, 0, 0);
+            const end = getTimeObject(endTime.year, endTime.month, endTime.day, endTime.hour, endTime.minute, endTime.second);
             addSegment(network, station, start, end, audiorate, info);
           }
         }
@@ -304,11 +312,11 @@ function generateAudioList() {
   }
 }
 
-function addSegment(network, station, starttime, endtime, audiorate, info) {
-  const startSeconds = getSeconds(year, starttime);
-  const endSeconds = getSeconds(year, endtime);
-  const startStr = getTimeString(starttime);
-  const endStr = getTimeString(endtime);
+function addSegment(network, station, startTime, endTime, audiorate, info) {
+  const startSeconds = getSeconds(refYear, startTime) - periodStartSeconds;
+  const endSeconds = getSeconds(refYear, endTime) - periodStartSeconds;
+  const startStr = getTimeString(startTime);
+  const endStr = getTimeString(endTime);
 
   info.links += `<a href=${makeAudioRequestUrl(network, station, startStr, endStr, audiorate)}>${startStr} ${endStr}</a>`;
   info.links += '<br/>';
@@ -409,15 +417,15 @@ function getSeconds(refYear, time) {
   return time.second + (time.minute + (time.hour + (time.day - 1 + dayOfYearAndMonth(refYear, time.year, time.month)) * 24) * 60) * 60;
 }
 
-function makeAvailabilityUrl(network, station, starttime, endtime) {
+function makeAvailabilityUrl(network, station, startTime, endTime) {
   return `https://service.iris.edu/irisws/availability/1/query?\
 format=json&\
 net=${network}&\
 sta=${station}&\
 loc=00&\
 cha=BHZ&\
-starttime=${starttime}&\
-endtime=${endtime}&\
+starttime=${startTime}&\
+endtime=${endTime}&\
 mergequality=false&\
 mergesamplerate=false&\
 mergeoverlap=false&\
@@ -428,13 +436,13 @@ nodata=404\
 `;
 }
 
-function makeAudioRequestUrl(network, station, starttime, endtime, audiorate) {
+function makeAudioRequestUrl(network, station, startTime, endTime, audiorate) {
   return `https://service.iris.edu/irisws/timeseries/1/query?\
 net=${network}&\
 sta=${station}&\
 cha=BHZ&\
-start=${starttime}&\
-end=${endtime}&\
+start=${startTime}&\
+end=${endTime}&\
 format=audio&\
 audiosamplerate=${audiorate}&\
 loc=00&\
